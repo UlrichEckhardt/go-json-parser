@@ -1,0 +1,6 @@
+# VS-Code artifacts
+.vscode
+
+# "go build" output
+json-parser
+
