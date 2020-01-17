@@ -39,41 +39,98 @@ func findMatchingQuotes(data []byte, cur, length int) (int, error) {
 }
 
 func parseJSON(data []byte) ([]JSONElement, error) {
-	res := make([]JSONElement, 0, 10)
-	length := len(data)
-	cur := 0
-	for cur != length {
-		switch data[cur] {
-		case ' ', '\n', '\r', '\t':
-			fmt.Println(cur, "whitespace")
-			// skip whitespace
-			cur++
-		case '{':
-			res = append(res, JSONElement{tpe: tObjectStart, offset: cur})
-			cur++
-		case '}':
-			res = append(res, JSONElement{tpe: tObjectEnd, offset: cur})
-			cur++
-		case '[':
-			res = append(res, JSONElement{tpe: tArrayStart, offset: cur})
-			cur++
-		case ']':
-			res = append(res, JSONElement{tpe: tArrayEnd, offset: cur})
-			cur++
-		case '"':
-			size, err := findMatchingQuotes(data, cur, length)
-			if err != nil {
-				return nil, err
+	// create a channel to receive errors from
+	exc := make(chan error)
+
+	// start parsing in a goroutine which emits the resulting tokens to this channel
+	tokens := make(chan JSONElement)
+	go func() {
+		// close error channel on exit to terminate waiting loop
+		defer close(exc)
+
+		length := len(data)
+		cur := 0
+		for cur != length {
+			switch data[cur] {
+			case ' ', '\n', '\r', '\t':
+				fmt.Println(cur, "whitespace")
+				// skip whitespace
+				cur++
+			case '{':
+				fmt.Println(cur, "opening braces")
+				tokens <- JSONElement{tpe: tObjectStart, offset: cur}
+				cur++
+			case '}':
+				fmt.Println(cur, "closing braces")
+				tokens <- JSONElement{tpe: tObjectEnd, offset: cur}
+				cur++
+			case '[':
+				fmt.Println(cur, "opening brackets")
+				tokens <- JSONElement{tpe: tArrayStart, offset: cur}
+				cur++
+			case ']':
+				fmt.Println(cur, "closing brackets")
+				tokens <- JSONElement{tpe: tArrayEnd, offset: cur}
+				cur++
+			case '"':
+				fmt.Println(cur, "string")
+				size, err := findMatchingQuotes(data, cur, length)
+				if err != nil {
+					exc <- err
+					return
+				}
+				tokens <- JSONElement{tpe: tString, offset: cur}
+				// two quotes plus payload
+				cur += 2 + size
+			case 'n':
+				fmt.Println(cur, "null")
+				if cur+4 > length {
+					exc <- errors.New("incomplete token")
+					return
+				}
+				tokens <- JSONElement{tpe: tNull, offset: cur}
+				cur += 4
+			case 't':
+				fmt.Println(cur, "true")
+				if cur+4 > length {
+					exc <- errors.New("incomplete token")
+					return
+				}
+				tokens <- JSONElement{tpe: tBool, offset: cur}
+				cur += 4
+			case 'f':
+				fmt.Println(cur, "false")
+				if cur+5 > length {
+					exc <- errors.New("incomplete token")
+					return
+				}
+				tokens <- JSONElement{tpe: tBool, offset: cur}
+				cur += 5
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				fmt.Println(cur, "number")
+				cur++
+			default:
+				fmt.Println(cur, "unexpected")
+				exc <- errors.New("unexpected byte")
+				return
 			}
-			res = append(res, JSONElement{tpe: tString, offset: cur})
-			// two quotes plus payload
-			cur += 2 + size
-		default:
-			return nil, errors.New("unexpected byte")
+		}
+	}()
+
+	res := make([]JSONElement, 0, 10)
+	for {
+		select {
+		case err := <-exc:
+			// Note that "err" can be nil, which happens when the channel
+			// is closed and it just means that the goroutine finished.
+			fmt.Println("received error", err)
+			return res, err
+		case elem := <-tokens:
+			fmt.Println("received element", elem)
+			res = append(res, elem)
+			break
 		}
 	}
-
-	return res, nil
 }
 
 func main() {

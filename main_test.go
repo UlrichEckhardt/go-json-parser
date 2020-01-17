@@ -22,6 +22,44 @@ func TestParseJSON(t *testing.T) {
 			},
 		},
 		"string 2": {
+			data: []byte(`"string"`),
+			elements: []JSONElement{
+				JSONElement{tpe: tString, offset: 0},
+			},
+		},
+		"null": {
+			data: []byte(`null`),
+			elements: []JSONElement{
+				JSONElement{tpe: tNull, offset: 0},
+			},
+		},
+		"bool true": {
+			data: []byte(`true`),
+			elements: []JSONElement{
+				JSONElement{tpe: tBool, offset: 0},
+			},
+		},
+		"bool false": {
+			data: []byte(`false`),
+			elements: []JSONElement{
+				JSONElement{tpe: tBool, offset: 0},
+			},
+		},
+		"array 1": {
+			data: []byte(`[]`),
+			elements: []JSONElement{
+				JSONElement{tpe: tArrayStart, offset: 0},
+				JSONElement{tpe: tArrayEnd, offset: 1},
+			},
+		},
+		"object 1": {
+			data: []byte(`{}`),
+			elements: []JSONElement{
+				JSONElement{tpe: tObjectStart, offset: 0},
+				JSONElement{tpe: tObjectEnd, offset: 1},
+			},
+		},
+		"whitespace 1": {
 			data: []byte{'\n', '"', '"'},
 			elements: []JSONElement{
 				JSONElement{tpe: tString, offset: 1},
