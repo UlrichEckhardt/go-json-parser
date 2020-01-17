@@ -52,11 +52,31 @@ func TestParseJSON(t *testing.T) {
 				JSONElement{tpe: tArrayEnd, offset: 1},
 			},
 		},
+		"array 2": {
+			data: []byte(`["", true]`),
+			elements: []JSONElement{
+				JSONElement{tpe: tArrayStart, offset: 0},
+				JSONElement{tpe: tString, offset: 1},
+				JSONElement{tpe: tComma, offset: 3},
+				JSONElement{tpe: tBool, offset: 5},
+				JSONElement{tpe: tArrayEnd, offset: 9},
+			},
+		},
 		"object 1": {
 			data: []byte(`{}`),
 			elements: []JSONElement{
 				JSONElement{tpe: tObjectStart, offset: 0},
 				JSONElement{tpe: tObjectEnd, offset: 1},
+			},
+		},
+		"object 2": {
+			data: []byte(`{"k": true}`),
+			elements: []JSONElement{
+				JSONElement{tpe: tObjectStart, offset: 0},
+				JSONElement{tpe: tString, offset: 1},
+				JSONElement{tpe: tColon, offset: 4},
+				JSONElement{tpe: tBool, offset: 6},
+				JSONElement{tpe: tObjectEnd, offset: 10},
 			},
 		},
 		"whitespace 1": {

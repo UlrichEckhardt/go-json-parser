@@ -9,6 +9,8 @@ import (
 const (
 	tNone = iota
 	tRoot
+	tComma
+	tColon
 	tObjectStart
 	tObjectEnd
 	tArrayStart
@@ -72,6 +74,14 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 				fmt.Println(cur, "closing brackets")
 				tokens <- JSONElement{tpe: tArrayEnd, offset: cur}
 				cur++
+			case ':':
+				fmt.Println(cur, "colon")
+				tokens <- JSONElement{tpe: tColon, offset: cur}
+				cur++
+			case ',':
+				fmt.Println(cur, "comma")
+				tokens <- JSONElement{tpe: tComma, offset: cur}
+				cur++
 			case '"':
 				fmt.Println(cur, "string")
 				size, err := findMatchingQuotes(data, cur, length)
@@ -88,6 +98,9 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 					exc <- errors.New("incomplete token")
 					return
 				}
+				if (data[cur+1] != 'u') || (data[cur+2] != 'l') || (data[cur+3] != 'l') {
+					exc <- errors.New("invalid token")
+				}
 				tokens <- JSONElement{tpe: tNull, offset: cur}
 				cur += 4
 			case 't':
@@ -96,6 +109,9 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 					exc <- errors.New("incomplete token")
 					return
 				}
+				if (data[cur+1] != 'r') || (data[cur+2] != 'u') || (data[cur+3] != 'e') {
+					exc <- errors.New("invalid token")
+				}
 				tokens <- JSONElement{tpe: tBool, offset: cur}
 				cur += 4
 			case 'f':
@@ -103,6 +119,9 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 				if cur+5 > length {
 					exc <- errors.New("incomplete token")
 					return
+				}
+				if (data[cur+1] != 'a') || (data[cur+2] != 'l') || (data[cur+3] != 's') || (data[cur+4] != 'e') {
+					exc <- errors.New("invalid token")
 				}
 				tokens <- JSONElement{tpe: tBool, offset: cur}
 				cur += 5
