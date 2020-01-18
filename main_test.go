@@ -7,6 +7,7 @@ import (
 type jsonTest struct {
 	data     []byte
 	elements []JSONElement
+	err      error
 }
 
 func TestParseJSON(t *testing.T) {
@@ -85,12 +86,37 @@ func TestParseJSON(t *testing.T) {
 				JSONElement{tpe: tString, offset: 1},
 			},
 		},
+		"invalid 1": {
+			data: []byte(`a`),
+			err:  ErrInvalidToken,
+		},
+		"invalid 2": {
+			data: []byte(`"`),
+			err:  ErrInvalidToken,
+		},
+		"invalid 3": {
+			data: []byte{0},
+			err:  ErrInvalidToken,
+		},
+		"invalid 4": {
+			data: []byte(`nil`),
+			err:  ErrInvalidToken,
+		},
 	}
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			elements, err := parseJSON(c.data)
-			if err != nil {
+			if c.err != nil {
+				if c.err == nil {
+					t.Error("expected error missing")
+				}
+				if c.err != err {
+					t.Error("wrong error")
+				}
+				return
+			}
+			if c.err == nil && err != nil {
 				t.Error("unexpected failure", err)
 				return
 			}

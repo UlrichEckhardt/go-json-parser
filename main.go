@@ -22,6 +22,9 @@ const (
 	tBool
 )
 
+// ErrInvalidToken signals that something could not be converted to a token.
+var ErrInvalidToken = errors.New("invalid token")
+
 // JSONElement is an element of the JSON syntax tree.
 type JSONElement struct {
 	tpe    int // type according to the t* constants above
@@ -37,7 +40,7 @@ func findMatchingQuotes(data []byte, cur, length int) (int, error) {
 			return res, nil
 		}
 	}
-	return 0, errors.New("missing closing quotes for string")
+	return 0, ErrInvalidToken
 }
 
 func parseJSON(data []byte) ([]JSONElement, error) {
@@ -95,33 +98,33 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 			case 'n':
 				fmt.Println(cur, "null")
 				if cur+4 > length {
-					exc <- errors.New("incomplete token")
+					exc <- ErrInvalidToken
 					return
 				}
 				if (data[cur+1] != 'u') || (data[cur+2] != 'l') || (data[cur+3] != 'l') {
-					exc <- errors.New("invalid token")
+					exc <- ErrInvalidToken
 				}
 				tokens <- JSONElement{tpe: tNull, offset: cur}
 				cur += 4
 			case 't':
 				fmt.Println(cur, "true")
 				if cur+4 > length {
-					exc <- errors.New("incomplete token")
+					exc <- ErrInvalidToken
 					return
 				}
 				if (data[cur+1] != 'r') || (data[cur+2] != 'u') || (data[cur+3] != 'e') {
-					exc <- errors.New("invalid token")
+					exc <- ErrInvalidToken
 				}
 				tokens <- JSONElement{tpe: tBool, offset: cur}
 				cur += 4
 			case 'f':
 				fmt.Println(cur, "false")
 				if cur+5 > length {
-					exc <- errors.New("incomplete token")
+					exc <- ErrInvalidToken
 					return
 				}
 				if (data[cur+1] != 'a') || (data[cur+2] != 'l') || (data[cur+3] != 's') || (data[cur+4] != 'e') {
-					exc <- errors.New("invalid token")
+					exc <- ErrInvalidToken
 				}
 				tokens <- JSONElement{tpe: tBool, offset: cur}
 				cur += 5
@@ -130,7 +133,7 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 				cur++
 			default:
 				fmt.Println(cur, "unexpected")
-				exc <- errors.New("unexpected byte")
+				exc <- ErrInvalidToken
 				return
 			}
 		}
