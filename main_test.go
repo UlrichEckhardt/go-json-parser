@@ -28,6 +28,12 @@ func TestParseJSON(t *testing.T) {
 				JSONElement{tpe: tString, offset: 0},
 			},
 		},
+		"string 3": {
+			data: []byte(`"\""`),
+			elements: []JSONElement{
+				JSONElement{tpe: tString, offset: 0},
+			},
+		},
 		"null": {
 			data: []byte(`null`),
 			elements: []JSONElement{
@@ -100,6 +106,14 @@ func TestParseJSON(t *testing.T) {
 		},
 		"invalid 4": {
 			data: []byte(`nil`),
+			err:  ErrInvalidToken,
+		},
+		"invalid 5": {
+			data: []byte{'"', 0, '"'},
+			err:  ErrInvalidToken,
+		},
+		"invalid 6": {
+			data: []byte("\"\n\""),
 			err:  ErrInvalidToken,
 		},
 	}

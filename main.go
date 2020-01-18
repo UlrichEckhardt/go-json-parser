@@ -35,9 +35,22 @@ func findMatchingQuotes(data []byte, cur, length int) (int, error) {
 	// skip opening quotes
 	cur++
 
+	backslashed := false
 	for res := 0; cur+res != length; res++ {
-		if data[cur+res] == '"' {
-			return res, nil
+		switch c := data[cur+res]; {
+		case c == '"':
+			if !backslashed {
+				return res, nil
+			}
+			backslashed = false
+		case c == '\\':
+			// invert backslash-state
+			backslashed = !backslashed
+		case c < 32:
+			// control byte
+			return res, ErrInvalidToken
+		default:
+			backslashed = false
 		}
 	}
 	return 0, ErrInvalidToken
