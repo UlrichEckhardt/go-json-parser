@@ -79,6 +79,17 @@ func TestParseJSON(t *testing.T) {
 				JSONElement{tpe: tArrayEnd, offset: 9, parent: 0},
 			},
 		},
+		"array 3": {
+			data: []byte(`[[""]]`),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tArrayStart, offset: 0, parent: 0},
+				JSONElement{tpe: tArrayStart, offset: 1, parent: 1},
+				JSONElement{tpe: tString, offset: 2, parent: 2},
+				JSONElement{tpe: tArrayEnd, offset: 4, parent: 1},
+				JSONElement{tpe: tArrayEnd, offset: 5, parent: 0},
+			},
+		},
 		"object 1": {
 			data: []byte(`{}`),
 			elements: []JSONElement{
@@ -135,6 +146,22 @@ func TestParseJSON(t *testing.T) {
 		},
 		"invalid structure 2": {
 			data: []byte("]"),
+			err:  ErrInvalidStructure,
+		},
+		"invalid structure 3": {
+			data: []byte("[,]"),
+			err:  ErrInvalidStructure,
+		},
+		"invalid structure 4": {
+			data: []byte("[1,]"),
+			err:  ErrInvalidStructure,
+		},
+		"invalid structure 5": {
+			data: []byte("[1:2]"),
+			err:  ErrInvalidStructure,
+		},
+		"invalid structure 6": {
+			data: []byte("[true false]"),
 			err:  ErrInvalidStructure,
 		},
 	}

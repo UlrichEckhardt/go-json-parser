@@ -182,6 +182,46 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 					// current context must be an array
 					return nil, ErrInvalidStructure
 				}
+				// validate all intermediate tokens
+				const (
+					start = iota // initial state, next token must be a value if present
+					comma        // next token must be a comma if present
+					next         // next token must be present and not a comma
+				)
+				state := start
+				for i := context + 1; i != len(res); i++ {
+					t := res[i]
+					// if this is not a direct child, ignore it
+					if t.parent != context {
+						continue
+					}
+					// if this is the end of a nested structure, ignore it
+					if t.tpe == tObjectEnd || t.tpe == tArrayEnd {
+						continue
+					}
+
+					switch t.tpe {
+					case tObjectStart, tArrayStart, tBool, tFloat, tInt, tNull, tString:
+						if state == comma {
+							// expected a comma as separator, not a value
+							return nil, ErrInvalidStructure
+						}
+						state = comma
+					case tComma:
+						if state != comma {
+							// expected a value, not a comma as separator
+							return nil, ErrInvalidStructure
+						}
+						state = next
+					default:
+						// unexpected token as array element
+						return nil, ErrInvalidStructure
+					}
+				}
+				if state == next {
+					// brackets are not empty but don't end in a value
+					return nil, ErrInvalidStructure
+				}
 				context = res[context].parent
 				elem.parent = context
 			case tObjectEnd:
