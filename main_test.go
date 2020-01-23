@@ -13,83 +13,96 @@ type jsonTest struct {
 func TestParseJSON(t *testing.T) {
 	cases := map[string]jsonTest{
 		"empty": {
-			data:     []byte(``),
-			elements: []JSONElement{},
+			data: []byte(``),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+			},
 		},
 		"string 1": {
 			data: []byte(`""`),
 			elements: []JSONElement{
-				JSONElement{tpe: tString, offset: 0},
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tString, offset: 0, parent: 0},
 			},
 		},
 		"string 2": {
 			data: []byte(`"string"`),
 			elements: []JSONElement{
-				JSONElement{tpe: tString, offset: 0},
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tString, offset: 0, parent: 0},
 			},
 		},
 		"string 3": {
 			data: []byte(`"\""`),
 			elements: []JSONElement{
-				JSONElement{tpe: tString, offset: 0},
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tString, offset: 0, parent: 0},
 			},
 		},
 		"null": {
 			data: []byte(`null`),
 			elements: []JSONElement{
-				JSONElement{tpe: tNull, offset: 0},
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tNull, offset: 0, parent: 0},
 			},
 		},
 		"bool true": {
 			data: []byte(`true`),
 			elements: []JSONElement{
-				JSONElement{tpe: tBool, offset: 0},
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tBool, offset: 0, parent: 0},
 			},
 		},
 		"bool false": {
 			data: []byte(`false`),
 			elements: []JSONElement{
-				JSONElement{tpe: tBool, offset: 0},
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tBool, offset: 0, parent: 0},
 			},
 		},
 		"array 1": {
 			data: []byte(`[]`),
 			elements: []JSONElement{
-				JSONElement{tpe: tArrayStart, offset: 0},
-				JSONElement{tpe: tArrayEnd, offset: 1},
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tArrayStart, offset: 0, parent: 0},
+				JSONElement{tpe: tArrayEnd, offset: 1, parent: 0},
 			},
 		},
 		"array 2": {
 			data: []byte(`["", true]`),
 			elements: []JSONElement{
-				JSONElement{tpe: tArrayStart, offset: 0},
-				JSONElement{tpe: tString, offset: 1},
-				JSONElement{tpe: tComma, offset: 3},
-				JSONElement{tpe: tBool, offset: 5},
-				JSONElement{tpe: tArrayEnd, offset: 9},
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tArrayStart, offset: 0, parent: 0},
+				JSONElement{tpe: tString, offset: 1, parent: 1},
+				JSONElement{tpe: tComma, offset: 3, parent: 1},
+				JSONElement{tpe: tBool, offset: 5, parent: 1},
+				JSONElement{tpe: tArrayEnd, offset: 9, parent: 0},
 			},
 		},
 		"object 1": {
 			data: []byte(`{}`),
 			elements: []JSONElement{
-				JSONElement{tpe: tObjectStart, offset: 0},
-				JSONElement{tpe: tObjectEnd, offset: 1},
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tObjectStart, offset: 0, parent: 0},
+				JSONElement{tpe: tObjectEnd, offset: 1, parent: 0},
 			},
 		},
 		"object 2": {
 			data: []byte(`{"k": true}`),
 			elements: []JSONElement{
-				JSONElement{tpe: tObjectStart, offset: 0},
-				JSONElement{tpe: tString, offset: 1},
-				JSONElement{tpe: tColon, offset: 4},
-				JSONElement{tpe: tBool, offset: 6},
-				JSONElement{tpe: tObjectEnd, offset: 10},
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tObjectStart, offset: 0, parent: 0},
+				JSONElement{tpe: tString, offset: 1, parent: 1},
+				JSONElement{tpe: tColon, offset: 4, parent: 1},
+				JSONElement{tpe: tBool, offset: 6, parent: 1},
+				JSONElement{tpe: tObjectEnd, offset: 10, parent: 0},
 			},
 		},
 		"whitespace 1": {
 			data: []byte{'\n', '"', '"'},
 			elements: []JSONElement{
-				JSONElement{tpe: tString, offset: 1},
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tString, offset: 1, parent: 0},
 			},
 		},
 		"invalid 1": {
@@ -115,6 +128,14 @@ func TestParseJSON(t *testing.T) {
 		"invalid 6": {
 			data: []byte("\"\n\""),
 			err:  ErrInvalidToken,
+		},
+		"invalid structure 1": {
+			data: []byte("}"),
+			err:  ErrInvalidStructure,
+		},
+		"invalid structure 2": {
+			data: []byte("]"),
+			err:  ErrInvalidStructure,
 		},
 	}
 

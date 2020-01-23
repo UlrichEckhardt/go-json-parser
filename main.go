@@ -25,10 +25,17 @@ const (
 // ErrInvalidToken signals that something could not be converted to a token.
 var ErrInvalidToken = errors.New("invalid token")
 
+// ErrInvalidStructure signals that a valid token was encountered in the wrong place.
+// In particular, that means closing tokens (")", "}") outside the scope of the
+// according aggregate value type. Further, it means commas outside of aggregate types
+// and colons anywhere but as a separator between key and value of an object value.
+var ErrInvalidStructure = errors.New("invalid structure")
+
 // JSONElement is an element of the JSON syntax tree.
 type JSONElement struct {
 	tpe    int // type according to the t* constants above
 	offset int // offset of the element within the input data
+	parent int // index of the parent element in the output data
 }
 
 func findMatchingQuotes(data []byte, cur, length int) (int, error) {
@@ -153,6 +160,8 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 	}()
 
 	res := make([]JSONElement, 0, 10)
+	res = append(res, JSONElement{tpe: tRoot})
+	context := 0
 	for {
 		select {
 		case err := <-exc:
@@ -162,6 +171,29 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 			return res, err
 		case elem := <-tokens:
 			fmt.Println("received element", elem)
+			// determine context changes
+			switch elem.tpe {
+			case tArrayStart, tObjectStart:
+				// remember parent index for aggregate value
+				elem.parent = context
+				context = len(res)
+			case tArrayEnd:
+				if res[context].tpe != tArrayStart {
+					// current context must be an array
+					return nil, ErrInvalidStructure
+				}
+				context = res[context].parent
+				elem.parent = context
+			case tObjectEnd:
+				if res[context].tpe != tObjectStart {
+					// current context must be an object
+					return nil, ErrInvalidStructure
+				}
+				context = res[context].parent
+				elem.parent = context
+			default:
+				elem.parent = context
+			}
 			res = append(res, elem)
 			break
 		}
