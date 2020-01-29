@@ -184,6 +184,14 @@ func TestParseJSON(t *testing.T) {
 			data: []byte(`{"k" "v"}`),
 			err:  ErrInvalidStructure,
 		},
+		"invalid structure 12": {
+			data: []byte(`1, 2`),
+			err:  ErrInvalidStructure,
+		},
+		"invalid structure 13": {
+			data: []byte(`"k":"v"`),
+			err:  ErrInvalidStructure,
+		},
 	}
 
 	for name, c := range cases {

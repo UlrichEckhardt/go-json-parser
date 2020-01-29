@@ -285,6 +285,16 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 				}
 				context = res[context].parent
 				elem.parent = context
+			case tComma:
+				if res[context].tpe != tArrayStart && res[context].tpe != tObjectStart {
+					return nil, ErrInvalidStructure
+				}
+				elem.parent = context
+			case tColon:
+				if res[context].tpe != tObjectStart {
+					return nil, ErrInvalidStructure
+				}
+				elem.parent = context
 			default:
 				elem.parent = context
 			}
