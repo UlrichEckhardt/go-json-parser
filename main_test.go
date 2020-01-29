@@ -60,6 +60,48 @@ func TestParseJSON(t *testing.T) {
 				JSONElement{tpe: tBool, offset: 0, parent: 0},
 			},
 		},
+		"number 1": {
+			data: []byte(`0`),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tNumber, offset: 0, parent: 0},
+			},
+		},
+		"number 2": {
+			data: []byte(`-1234`),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tNumber, offset: 0, parent: 0},
+			},
+		},
+		"number 3": {
+			data: []byte(`1.2`),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tNumber, offset: 0, parent: 0},
+			},
+		},
+		"number 4": {
+			data: []byte(`1E1`),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tNumber, offset: 0, parent: 0},
+			},
+		},
+		"number 5": {
+			data: []byte(`1e-1`),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tNumber, offset: 0, parent: 0},
+			},
+		},
+		"number 6": {
+			data: []byte(`0.314e+1`),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tNumber, offset: 0, parent: 0},
+			},
+		},
 		"array 1": {
 			data: []byte(`[]`),
 			elements: []JSONElement{
@@ -149,6 +191,26 @@ func TestParseJSON(t *testing.T) {
 		},
 		"invalid 6": {
 			data: []byte("\"\n\""),
+			err:  ErrInvalidToken,
+		},
+		"invalid 7": {
+			data: []byte(".2"),
+			err:  ErrInvalidToken,
+		},
+		"invalid 8": {
+			data: []byte("1."),
+			err:  ErrInvalidToken,
+		},
+		"invalid 9": {
+			data: []byte("1.2E"),
+			err:  ErrInvalidToken,
+		},
+		"invalid 10": {
+			data: []byte("1.2E+"),
+			err:  ErrInvalidToken,
+		},
+		"invalid 11": {
+			data: []byte("1.2e-"),
 			err:  ErrInvalidToken,
 		},
 		"invalid structure 1": {

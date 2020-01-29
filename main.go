@@ -62,6 +62,149 @@ func findMatchingQuotes(data []byte, cur, length int) (int, error) {
 	return 0, ErrInvalidToken
 }
 
+func findEndOfNumber(data []byte, cur, length int) (int, error) {
+	const (
+		optionalSign = iota
+		nonfractionStart
+		nonfractionContinued
+		radixSeparator
+		fractionStart
+		fractionContinued
+		exponentSeparator
+		exponentSign
+		exponentStart
+		exponentContinued
+	)
+
+	res := 0
+	state := optionalSign
+loop:
+	for {
+		// get next glyph
+		if cur+res == length {
+			break loop
+		}
+		c := data[cur+res]
+
+		switch state {
+		case optionalSign:
+			// if it's a minus sign, skip it
+			if c == '-' {
+				res++
+			}
+			state = nonfractionStart
+
+		case nonfractionStart:
+			switch c {
+			case '0':
+				// consume non-fractional digit
+				res++
+				state = radixSeparator
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				// consume non-fractional digit
+				res++
+				state = nonfractionContinued
+			default:
+				break loop
+			}
+
+		case nonfractionContinued:
+			switch c {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				// consume non-fractional digits
+				res++
+				state = nonfractionContinued
+			default:
+				// Anything else isn't consumed. Instead, we treat it as
+				// (optional) radix separator and continue from that point.
+				state = radixSeparator
+			}
+
+		case radixSeparator:
+			switch c {
+			case '.':
+				// consume radix separator
+				res++
+				state = fractionStart
+			default:
+				state = exponentSeparator
+			}
+
+		case fractionStart:
+			switch c {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				// consume fractional digits
+				res++
+				state = nonfractionContinued
+			default:
+				break loop
+			}
+
+		case fractionContinued:
+			switch c {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				// consume fractional digits
+				res++
+			default:
+				state = exponentSeparator
+			}
+
+		case exponentSeparator:
+			switch c {
+			case 'e', 'E':
+				// consume exponent separator
+				res++
+				state = exponentSign
+			default:
+				break loop
+			}
+
+		case exponentSign:
+			switch c {
+			case '+', '-':
+				// consume exponent sign
+				res++
+				state = exponentStart
+			default:
+				state = exponentStart
+			}
+
+		case exponentStart:
+			// Note: It seems that "1.e01" is valid, although "01.2" isn't, hence the
+			// numbers of the exponent are not parsed like the nonfractional digits.
+			switch c {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				// consume exponent digit
+				res++
+				state = exponentContinued
+			default:
+				break loop
+			}
+
+		case exponentContinued:
+			switch c {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				// consume exponent digit
+				res++
+				state = exponentContinued
+			default:
+				break loop
+			}
+		}
+	}
+
+	// check final state, there must not be incomplete parts
+	switch state {
+	case optionalSign, nonfractionStart, fractionStart, exponentSign, exponentStart:
+		// incomplete number token
+		return 0, ErrInvalidToken
+	case nonfractionContinued, radixSeparator, fractionContinued, exponentSeparator, exponentContinued:
+		return res, nil
+	default:
+		return 0, errors.New("invalid state parsing number")
+	}
+}
+
 func parseJSON(data []byte) ([]JSONElement, error) {
 	// create a channel to receive errors from
 	exc := make(chan error)
@@ -149,8 +292,13 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 				cur += 5
 			case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				fmt.Println(cur, "number")
+				size, err := findEndOfNumber(data, cur, length)
+				if err != nil {
+					exc <- err
+					return
+				}
 				tokens <- JSONElement{tpe: tNumber, offset: cur}
-				cur++
+				cur += size
 			default:
 				fmt.Println(cur, "unexpected")
 				exc <- ErrInvalidToken
