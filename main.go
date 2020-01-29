@@ -119,6 +119,7 @@ func findEndOfNumber(data []byte, cur, length int) (int, error) {
 	const (
 		optionalSign = iota
 		nonfractionStart
+		leadingZero
 		nonfractionContinued
 		radixSeparator
 		fractionStart
@@ -152,12 +153,24 @@ loop:
 			case '0':
 				// consume non-fractional digit
 				res++
-				state = radixSeparator
+				state = leadingZero
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				// consume non-fractional digit
 				res++
 				state = nonfractionContinued
 			default:
+				break loop
+			}
+
+		case leadingZero:
+			// expect fractional digits next
+			// This will also cause an error if parsing stops here.
+			state = fractionStart
+			if c == '.' {
+				// consume radix separator
+				res++
+			} else {
+				// stop parsing
 				break loop
 			}
 
@@ -251,7 +264,7 @@ loop:
 	case optionalSign, nonfractionStart, fractionStart, exponentSign, exponentStart:
 		// incomplete number token
 		return 0, ErrInvalidToken
-	case nonfractionContinued, radixSeparator, fractionContinued, exponentSeparator, exponentContinued:
+	case leadingZero, nonfractionContinued, radixSeparator, fractionContinued, exponentSeparator, exponentContinued:
 		return res, nil
 	default:
 		return 0, errors.New("invalid state parsing number")

@@ -243,6 +243,14 @@ func TestParseJSON(t *testing.T) {
 			data: []byte("1.2e-"),
 			err:  ErrInvalidToken,
 		},
+		"invalid 12": {
+			data: []byte("01.2"),
+			err:  ErrInvalidToken,
+		},
+		"invalid 13": {
+			data: []byte("01"),
+			err:  ErrInvalidToken,
+		},
 		"invalid string 1": {
 			data: []byte(`"`),
 			err:  ErrInvalidToken,
