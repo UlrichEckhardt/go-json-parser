@@ -38,28 +38,56 @@ type JSONElement struct {
 }
 
 func findMatchingQuotes(data []byte, cur, length int) (int, error) {
-	// skip opening quotes
-	cur++
+	const (
+		openingQuotes = iota
+		character
+		backslashEscaped
+	)
 
-	backslashed := false
-	for res := 0; cur+res != length; res++ {
-		switch c := data[cur+res]; {
-		case c == '"':
-			if !backslashed {
-				return res, nil
+	res := 0
+	state := openingQuotes
+	for {
+		// get next glyph
+		if cur+res == length {
+			// no more data
+			return 0, ErrInvalidToken
+		}
+		c := data[cur+res]
+
+		switch state {
+		case openingQuotes:
+			switch c {
+			case '"':
+				// consume quotes
+				res++
+				state = character
+			default:
+				return 0, ErrInvalidToken
 			}
-			backslashed = false
-		case c == '\\':
-			// invert backslash-state
-			backslashed = !backslashed
-		case c < 32:
-			// control byte
-			return res, ErrInvalidToken
-		default:
-			backslashed = false
+		case character:
+			switch {
+			case c == '\\':
+				// consume backslash
+				res++
+				state = backslashEscaped
+			case c == '"':
+				// consume closing quote and finish
+				res++
+				return res, nil
+			case c < 32:
+				// control byte
+				return res, ErrInvalidToken
+			default:
+				// consume character
+				res++
+				state = character
+			}
+		case backslashEscaped:
+			// consume character unseen
+			res++
+			state = character
 		}
 	}
-	return 0, ErrInvalidToken
 }
 
 func findEndOfNumber(data []byte, cur, length int) (int, error) {
@@ -255,8 +283,7 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 					return
 				}
 				tokens <- JSONElement{tpe: tString, offset: cur}
-				// two quotes plus payload
-				cur += 2 + size
+				cur += size
 			case 'n':
 				fmt.Println(cur, "null")
 				if cur+4 > length {

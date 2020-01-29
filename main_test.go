@@ -39,6 +39,48 @@ func TestParseJSON(t *testing.T) {
 				JSONElement{tpe: tString, offset: 0, parent: 0},
 			},
 		},
+		"string 4": {
+			data: []byte(`"\\"`),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tString, offset: 0, parent: 0},
+			},
+		},
+		"string 5": {
+			data: []byte(`"\/"`),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tString, offset: 0, parent: 0},
+			},
+		},
+		"string 6": {
+			data: []byte(`"\b"`),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tString, offset: 0, parent: 0},
+			},
+		},
+		"string 7": {
+			data: []byte(`"\n"`),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tString, offset: 0, parent: 0},
+			},
+		},
+		"string 8": {
+			data: []byte(`"\t"`),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tString, offset: 0, parent: 0},
+			},
+		},
+		"string 9": {
+			data: []byte(`"\u1234"`),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tString, offset: 0, parent: 0},
+			},
+		},
 		"null": {
 			data: []byte(`null`),
 			elements: []JSONElement{
@@ -173,24 +215,12 @@ func TestParseJSON(t *testing.T) {
 			data: []byte(`a`),
 			err:  ErrInvalidToken,
 		},
-		"invalid 2": {
-			data: []byte(`"`),
-			err:  ErrInvalidToken,
-		},
 		"invalid 3": {
 			data: []byte{0},
 			err:  ErrInvalidToken,
 		},
 		"invalid 4": {
 			data: []byte(`nil`),
-			err:  ErrInvalidToken,
-		},
-		"invalid 5": {
-			data: []byte{'"', 0, '"'},
-			err:  ErrInvalidToken,
-		},
-		"invalid 6": {
-			data: []byte("\"\n\""),
 			err:  ErrInvalidToken,
 		},
 		"invalid 7": {
@@ -211,6 +241,18 @@ func TestParseJSON(t *testing.T) {
 		},
 		"invalid 11": {
 			data: []byte("1.2e-"),
+			err:  ErrInvalidToken,
+		},
+		"invalid string 1": {
+			data: []byte(`"`),
+			err:  ErrInvalidToken,
+		},
+		"invalid string 2": {
+			data: []byte{'"', 0, '"'},
+			err:  ErrInvalidToken,
+		},
+		"invalid string 3": {
+			data: []byte("\"\n\""),
 			err:  ErrInvalidToken,
 		},
 		"invalid structure 1": {
