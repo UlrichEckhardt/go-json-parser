@@ -83,9 +83,34 @@ func findMatchingQuotes(data []byte, cur, length int) (int, error) {
 				state = character
 			}
 		case backslashEscaped:
-			// consume character unseen
-			res++
-			state = character
+			switch c {
+			case '"', '\\', '/', 'b', 'f', 'n', 'r', 't':
+				// consume character unseen
+				res++
+				state = character
+			case 'u':
+				// consume Unicode start marker
+				res++
+				// check next
+				for i := 0; i != 4; i++ {
+					// get next glyph
+					if cur+res == length {
+						// no more data
+						return 0, ErrInvalidToken
+					}
+					switch data[cur+res] {
+					case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F':
+						// consume hex digit
+						res++
+					default:
+						// invalid Unicode
+						return 0, ErrInvalidToken
+					}
+				}
+				state = character
+			default:
+				return 0, ErrInvalidToken
+			}
 		}
 	}
 }

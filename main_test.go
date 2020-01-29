@@ -255,6 +255,14 @@ func TestParseJSON(t *testing.T) {
 			data: []byte("\"\n\""),
 			err:  ErrInvalidToken,
 		},
+		"invalid string 4": {
+			data: []byte(`"\M"`),
+			err:  ErrInvalidToken,
+		},
+		"invalid string 5": {
+			data: []byte(`"\ux1234"`),
+			err:  ErrInvalidToken,
+		},
 		"invalid structure 1": {
 			data: []byte("}"),
 			err:  ErrInvalidStructure,
