@@ -17,8 +17,7 @@ const (
 	tArrayEnd
 	tString
 	tNull
-	tInt
-	tFloat
+	tNumber
 	tBool
 )
 
@@ -201,7 +200,7 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 					}
 
 					switch t.tpe {
-					case tObjectStart, tArrayStart, tBool, tFloat, tInt, tNull, tString:
+					case tObjectStart, tArrayStart, tBool, tNumber, tNull, tString:
 						if state == comma {
 							// expected a comma as separator, not a value
 							return nil, ErrInvalidStructure
@@ -264,7 +263,7 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 						state = value
 					case value:
 						switch t.tpe {
-						case tObjectStart, tArrayStart, tBool, tFloat, tInt, tNull, tString:
+						case tObjectStart, tArrayStart, tBool, tNumber, tNull, tString:
 							state = comma
 						default:
 							// expected a value
