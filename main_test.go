@@ -90,6 +90,17 @@ func TestParseJSON(t *testing.T) {
 				JSONElement{tpe: tArrayEnd, offset: 5, parent: 0},
 			},
 		},
+		"array 5": {
+			data: []byte(`[1, 2]`),
+			elements: []JSONElement{
+				JSONElement{tpe: tRoot, offset: 0, parent: 0},
+				JSONElement{tpe: tArrayStart, offset: 0, parent: 0},
+				JSONElement{tpe: tNumber, offset: 1, parent: 1},
+				JSONElement{tpe: tComma, offset: 2, parent: 1},
+				JSONElement{tpe: tNumber, offset: 4, parent: 1},
+				JSONElement{tpe: tArrayEnd, offset: 5, parent: 0},
+			},
+		},
 		"object 1": {
 			data: []byte(`{}`),
 			elements: []JSONElement{

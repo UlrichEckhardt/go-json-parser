@@ -147,8 +147,9 @@ func parseJSON(data []byte) ([]JSONElement, error) {
 				}
 				tokens <- JSONElement{tpe: tBool, offset: cur}
 				cur += 5
-			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				fmt.Println(cur, "number")
+				tokens <- JSONElement{tpe: tNumber, offset: cur}
 				cur++
 			default:
 				fmt.Println(cur, "unexpected")
