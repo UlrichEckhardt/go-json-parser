@@ -198,10 +198,11 @@ func TestParseJSON(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			elements, err := parseJSON(c.data)
 			if c.err != nil {
-				if c.err == nil {
+				if err == nil {
 					t.Error("expected error missing")
-				}
-				if c.err != err {
+				} else if c.err != err {
+					t.Log("expected error", c.err)
+					t.Log("received error", err)
 					t.Error("wrong error")
 				}
 				return
@@ -216,6 +217,8 @@ func TestParseJSON(t *testing.T) {
 					break
 				}
 				if e != elements[i] {
+					t.Log("expected element", e)
+					t.Log("received element", elements[i])
 					t.Errorf("element %d differs", i)
 					break
 				}
